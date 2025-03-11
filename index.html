@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="icon.jpg">
+    <title>DIALOG | LOCAL STORAGE</title>
+    <style>
+        * {
+            background-color: rgb(1, 1, 75);
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+        }
+        h1,table,button,dialog {
+            color: rgba(255, 255, 255, 0.9);
+            text-align: center;
+            line-height: 1.8rem;
+        }
+        button,select,option {
+            background-color: rgba(255, 255, 255, 0.9);
+            color: rgb(1, 1, 75);
+        }
+        select {
+            padding:.5rem 2rem;
+        }
+        button:hover,select:hover,option:hover {
+            cursor: pointer;
+        }
+        table {
+            width: 100%;
+        }
+        td,th {
+            padding: 1rem .5rem;
+        }
+        table,td,th {
+            border: 2px solid;
+            border-collapse: collapse;
+        }
+        th {
+            text-transform: uppercase;
+        }
+        dialog {
+            border: .2rem solid;
+            width: 50%;
+            padding:0;
+            * {
+                background-color: aliceblue;
+                color: rgb(1, 1, 75);
+                padding:.3rem;
+            }
+        }
+        dialog::backdrop {
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(.1rem);
+        }
+
+        input {
+            width: 17rem;
+            height: 2rem;
+            font-size: 1.5rem;
+        }
+
+        input[type="number"]::-webkit-inner-spin-button,-webkit-outer-spin-button {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <table>
+            <tr>
+                <th colspan="7">Students Grade book</th>
+            </tr>
+            <tr>
+                <th>No.</th>
+                <th>Names</th>
+                <th>Subject</th>
+                <th>Marks</th>
+                <th>Grade</th>
+                <th>Data Manipulate</th>
+            </tr>
+        </table>
+        <button id="check" style="margin: 2rem 0 0 2rem; padding: .5rem 1rem;">Check Out For Your Student</button>
+        <dialog>
+            <form method="dialog">
+                <h2>Enter the student's details</h2>
+                <fieldset>
+                    <legend>Student's names</legend>
+                    <input type="text" name="student's name" id="studentNames" required>
+                </fieldset>
+                <fieldset>
+                    <legend>Subject</legend>
+                    <input type="text" name="the subject" id="subject" required>
+                </fieldset>
+                <fieldset>
+                    <legend>Student's Points</legend>
+                    <input type="number" name="student's name" id="studentPoints" required>
+                </fieldset>
+                <button id="submit" type="submit" style="margin: 2rem 0 0 2rem; padding: .5rem 1rem; ">Submit</button>
+                <button id="cancel" type="button" style="margin: 2rem 0 0 0; padding: .5rem 1rem; ">Cancel</button>
+            </form>
+        </dialog>
+    </main>
+</body>
+</html>
+
+
+<script type="text/javascript">
+    const allStudents = JSON.parse(localStorage.getItem('data')) || [];
+
+    let studentRows,dataManipulation,storedData;
+    studentRows = document.querySelectorAll('.studentRow');
+
+    const gradeLogic = (() => {
+        function studentMarks (marks) {
+            if (marks >= 80 && marks <= 100) {
+                return 'A';
+            }
+            else if (marks >= 70 && marks < 80) {
+                return 'B';
+            }
+            else if (marks >= 60 && marks < 70) {
+                return 'C';
+            }
+            else if (marks >= 50 && marks < 60) {
+                return 'D';
+            }
+            else if (marks < 50 && marks >= 0) {
+                return 'F';
+            }
+            else {
+                return false;
+            }
+        }
+        return {
+            studentMarks
+        }
+    })()
+
+    const UICreation = (() => {
+
+        function storing () {
+            const storedData = JSON.stringify(allStudents);
+            localStorage.setItem('data',storedData);
+        }
+
+        const rowInsertDOM = (object,bool = true) => {
+            const table = document.querySelector('table');
+            const newRow = rowFormatDOM(object);
+            let updatedTableInnerHTML = table.innerHTML + newRow;
+            table.innerHTML = updatedTableInnerHTML;
+            studentRows = document.querySelectorAll('.studentRow'); 
+            dataManipulation = document.querySelectorAll('.dataManipulation');
+            dataManipulation.forEach(select => {
+                select.addEventListener('change', UIUpdates.studentDataManipulation);
+            })
+            if (bool) {
+                allStudents.push(object);
+                storing();
+            }
+        }
+        const rowFormatDOM = ({names,grade,subject,points}) => {
+            return`
+                <tr class="studentRow" id="${studentRows.length + 1}">
+                    <td>${studentRows.length + 1}</td>
+                    <td>${names}</td>
+                    <td>${subject}</td>
+                    <td>Points: ${points}</td>
+                    <td>Grade: ${grade}</td>
+                    <td>
+                        <select class="dataManipulation">
+                            <option value="None">Student Manipulation</option>
+                            <option value="edit">Edit Student Data</option>
+                            <option value="delete">Delete Student</option>
+                        </select>
+                    </td>
+                </tr>
+            `
+        }
+        return {
+            rowInsertDOM,storing
+        }
+    })()
+
+    const UIUpdates = (() => {
+
+        let currentIndexManipulate;
+
+        function updating(toDo) {
+            switch(toDo) {
+            case 'inputReset':
+                document.getElementById('studentNames').value = '';
+                document.getElementById('subject').value = '';
+                document.getElementById('studentPoints').value = '';
+            break;
+
+            }
+        }
+
+        //student edit or account delete 
+        function studentDataManipulation (e) {
+
+            const index = parseInt(e.target.parentElement.parentElement.id) - 1;
+            currentIndexManipulate = index;
+
+            switch(e.target.value) {
+                case 'edit':
+                    document.querySelector('form').children[0].innerText = `You are editing ${allStudents[index].names}'s data.`;
+                    document.querySelector('form').querySelectorAll('button')[0].innerText = 'Update';
+                    document.getElementById('studentNames').value = allStudents[index].names;
+                    document.getElementById('subject').value = allStudents[index].subject;
+                    document.getElementById('studentPoints').value = allStudents[index].points;
+                    document.querySelector('dialog').showModal();
+
+                break;
+                case 'delete':
+                    allStudents.splice(index,1);
+                    for (let i = index + 1; i < studentRows.length; i++) {
+                        console.log(studentRows[i].children[0].innerText);
+                        studentRows[i].children[0].innerText = parseInt(studentRows[i].children[0].innerText) - 1;
+                        studentRows[i].id = parseInt(studentRows[i].id) - 1;
+                    }
+                    e.target.parentElement.parentElement.remove();
+                    studentRows = document.querySelectorAll('.studentRow');
+                    if (!allStudents.length && !studentRows.length) {
+                        localStorage.clear();
+                    }
+                    else {
+                        UICreation.storing();
+                    }
+                break;
+            }
+
+            e.target.innerHTML = 
+            `
+                <option value="None">Student Manipulation</option>
+                <option value="edit">Edit Student Data</option>
+                <option value="delete">Delete Student</option>
+            `
+        }
+
+        const singleStudentUpdate = ({names,grade,subject,points}) => {
+            allStudents[currentIndexManipulate].names = names;
+            allStudents[currentIndexManipulate].grade = grade;
+            allStudents[currentIndexManipulate].subject = subject;
+            allStudents[currentIndexManipulate].points = points;
+
+            studentRows[currentIndexManipulate].children[1].innerText = allStudents[currentIndexManipulate].names;
+            studentRows[currentIndexManipulate].children[2].innerText = allStudents[currentIndexManipulate].subject;
+            studentRows[currentIndexManipulate].children[3].innerText = `Points: ${allStudents[currentIndexManipulate].points}`;
+            studentRows[currentIndexManipulate].children[4].innerText = `Grade: ${allStudents[currentIndexManipulate].grade}`;
+
+            UICreation.storing();
+        }
+
+        return {
+            updating,studentDataManipulation,singleStudentUpdate
+        }
+    })()
+    
+    if(allStudents.length) {
+        for (let i = 0; i < allStudents.length; i++) {
+            UICreation.rowInsertDOM(allStudents[i],false);
+        }
+    }
+
+    document.getElementById('check').addEventListener('click', () => {
+        UIUpdates.updating('inputReset');
+        document.querySelector('dialog').showModal();
+        document.querySelector('form').children[0].innerText = "Enter the student's details";
+        document.querySelector('form').querySelectorAll('button')[0].innerText = 'Submit';
+    })
+    document.querySelector('form').addEventListener('submit', () => {
+
+        document.querySelector('dialog').close();
+        const studentGrade = gradeLogic.studentMarks(parseInt(document.getElementById('studentPoints').value));
+        const studentNames = document.getElementById('studentNames').value;
+        const subject = document.getElementById('subject').value;
+        const studentPoints = document.getElementById('studentPoints').value;
+        let object = {};
+        object.names = studentNames;
+        object.grade = studentGrade;
+        object.subject = subject;
+        object.points = studentPoints;
+        if (!studentGrade) {
+            alert('Invalid Entry');
+            return 0;
+        }
+
+        if (document.querySelector('form').querySelectorAll('button')[0].innerText === 'Submit') {
+            UICreation.rowInsertDOM(object);
+        }
+        else {
+            UIUpdates.singleStudentUpdate(object);
+        }
+    })
+    document.getElementById('cancel').addEventListener('click', () => {
+        document.querySelector('dialog').close();
+    })
+</script>
